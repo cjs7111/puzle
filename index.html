@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>간단한 퍼즐 게임</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .game-container {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 2em;
+        }
+        
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(4, 60px);
+            gap: 5px;
+            margin: 20px auto;
+            background: #333;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        
+        .tile {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(45deg, #ff6b6b, #ffa502);
+            border: 2px solid #fff;
+            border-radius: 5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .tile:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+        
+        .empty {
+            background: #ccc;
+            cursor: default;
+        }
+        
+        .controls {
+            margin-top: 20px;
+        }
+        
+        button {
+            background: linear-gradient(45deg, #ff6b6b, #ffa502);
+            border: none;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .moves {
+            font-size: 18px;
+            margin-top: 15px;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>퍼즐 게임!</h1>
+        <div class="game-board" id="board"></div>
+        <div class="moves">이동 횟수: <span id="moveCount">0</span></div>
+        <div class="controls">
+            <button onclick="shuffle()">섞기</button>
+            <button onclick="reset()">초기화</button>
+        </div>
+    </div>
+
+    <script>
+        let board = [];
+        let moveCount = 0;
+        const size = 4;
+        
+        function initBoard() {
+            // 숫자를 생성하여 초기화
+            board = [];
+            for (let i = 1; i <= size * size - 1; i++) {
+                board.push(i);
+            }
+            board.push(''); // 빈칸
+            
+            updateDisplay();
+        }
+        
+        function updateDisplay() {
+            const boardElement = document.getElementById('board');
+            boardElement.innerHTML = '';
+            
+            for (let i = 0; i < size * size; i++) {
+                const tile = document.createElement('div');
+                tile.className = 'tile';
+                
+                if (board[i] === '') {
+                    tile.classList.add('empty');
+                    tile.textContent = '';
+                } else {
+                    tile.textContent = board[i];
+                    // 클릭 이벤트 추가
+                    tile.addEventListener('click', () => moveTile(i));
+                }
+                
+                boardElement.appendChild(tile);
+            }
+            
+            document.getElementById('moveCount').textContent = moveCount;
+        }
+        
+        function shuffle() {
+            // 100번 랜덤 이동으로 섬기기
+            for (let i = 0; i < 100; i++) {
+                const emptyIndex = board.indexOf('');
+                
+                let possibleMoves = [];
+                
+                // 인접한 위치 찾기
+                if (emptyIndex % size !== 0) possibleMoves.push(emptyIndex - 1); // 왼쪽
+                if (emptyIndex % size !== size - 1) possibleMoves.push(emptyIndex + 1); // 오른쪽
+                if (emptyIndex >= size) possibleMoves.push(emptyIndex - size); // 위
+                if (emptyIndex < size * (size - 1)) possibleMoves.push(emptyIndex + size); // 아래
+                
+                // 랜덤 이동 선택
+                const randomMove = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+                
+                // 타일 교환
+                [board[randomMove], board[emptyIndex]] = [board[emptyIndex], board[randomMove]];
+            }
+            
+            moveCount = 0;
+            updateDisplay();
+        }
+        
+        function reset() {
+            initBoard();
+        }
+        
+        function moveTile(index) {
+            const emptyIndex = board.indexOf('');
+            
+            // 인접한 타일인지 확인
+            if (isAdjacent(index, emptyIndex)) {
+                // 타일 교환
+                [board[index], board[emptyIndex]] = [board[emptyIndex], board[index]];
+                moveCount++;
+                updateDisplay();
+            }
+        }
+        
+        function isAdjacent(index1, index2) {
+            const row1 = Math.floor(index1 / size);
+            const col1 = index1 % size;
+            const row2 = Math.floor(index2 / size);
+            const col2 = index2 % size;
+            
+            // 같은 행 또는 열에서 인접한 위치인지 확인
+            return (row1 === row2 && Math.abs(col1 - col2) === 1) || 
+                   (col1 === col2 && Math.abs(row1 - row2) === 1);
+        }
+        
+        // 게임 시작
+        initBoard();
+    </script>
+</body>
+</html>
